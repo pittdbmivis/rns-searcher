@@ -1,0 +1,144 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>Insert title here</title>
+
+<style type="text/css">
+
+.x.axis line {
+  stroke: #fff;
+}
+</style>
+</head>
+<body>
+
+	<link rel="stylesheet" type="text/css" href="./jquery-ui.css">	
+    <link rel="stylesheet" type="text/css" href="css/style.css">
+    <link rel="stylesheet" type="text/css" href="./swimlane_page_reworked.css">
+	<link rel="stylesheet" type="text/css" href="css/reset.css" media="screen" />
+	<link rel="stylesheet" type="text/css" href="css/text.css" media="screen" />
+	<link rel="stylesheet" type="text/css" href="css/grid.css" media="screen" />
+	<link rel="stylesheet" type="text/css" href="css/layout.css" media="screen" />
+	<link rel="stylesheet" type="text/css" href="css/nav.css" media="screen" />
+    
+	<script src="js/jquery-1.4.2.min.js" type="text/javascript"></script>
+<script src="js/jquery-ui-1.8.5.custom.min.js" type="text/javascript"></script>
+	<script src="js/jquery.blockUI.js" type="text/javascript"></script>
+	<script src="js/jquery.simplemodal.1.4.2.min.js" type="text/javascript"></script>
+	<script src="js/jquery.ui.dialog.js" type="text/javascript"></script>
+<script type='text/javascript'> 
+
+
+$(window).load(function(){
+//var sparql_url = "http://localhost:8890/sparql-cors/?default-graph-uri=http%3A%2F%2Fufl.edu%2Fvivo-data%23&format=application/json";
+	var sparql_url = "http://lnx02.dbmi.pitt.edu/fred/?default-graph-uri=http%3A%2F%2Fvivo.demo.org%2Fvivo%23&format=application/json";
+
+    var topic_sparql_query_part1 = "prefix vivo: <http://vivoweb.org/ontology/core#> select distinct ?keyword where { ?document_uri vivo:informationResourceInAuthorship ?author_uri . ?document_uri vivo:freetextKeyword ?keyword . ?keyword bif:contains \"'";
+    var topic_sparql_query_part2 = "*'\" } order by ?keyword";
+	$("#meshtopic").autocomplete({
+		source: function( request, response ) {
+			$.ajax({
+				url: sparql_url,
+				dataType: "json",
+				data: {
+					query: topic_sparql_query_part1 + request.term + topic_sparql_query_part2
+				},
+				success: function( data ) {
+					response( $.map( data.results.bindings, function( item ) {
+						return {
+							id: item.keyword.value,
+							label: item.keyword.value,
+							value: item.keyword.value
+						}
+					}));
+				}
+			});
+		},
+		//TODO: I think I need to rework the loadauthors process
+		//and I need to load the keywords first
+        select: function( event, ui ) {
+			    //overlay();
+			   // $("#waiting")[0].style.display = "block";
+				clearData();
+	            processData(ui.item.value);
+			    //$("#waiting")[0].style.display = "none";
+    },
+
+		minLength: 4
+	});
+
+	var notes = $( "#notes" ),
+		allFields = $( [] ).add( notes ),
+		tips = $( ".validateTips" );
+
+	$( "#dialog-form" ).dialog({
+		autoOpen: false,
+		height: 300,
+		width: 350,
+		modal: true,
+		buttons: {
+			"Add to List": function() {
+		       var author_info = {
+		    		   id : $(this).data('authorid'),
+				       name: $(this).data('authorname'),
+				       notes: notes.val()
+		       };
+		       addAuthorToList(author_info);
+			   $( this ).dialog( "close" );
+			},
+			Cancel: function() {
+				$( this ).dialog( "close" );
+			}
+		},
+		close: function() {
+			allFields.val( "" ).removeClass( "ui-state-error" );
+		}
+	});
+
+});
+</script>
+<form>
+<fieldset>
+<legend style="background:lightskyblue">Collaborator Search</legend>
+<p class="ui-widget"><label for="state">Please enter a research area: </label></br></p>
+<input type="text" id="meshtopic"  name="meshtopic" />&nbsp;try: regression analysis or &quot;polymorphism, single nucleotide&quot;<br />
+<p align="right">Copyright &copy;2014 University of Pittsburgh</p></fieldset>
+</form>
+
+<div class="container_16">
+	<div class="grid_14">  <img id="waiting" alt="waiting icon" height="32px" width="32px" src="images/throbber.gif" style="display:none;z-index:10000;postion:absolute;left:100px;top:100px;"/>
+	<svg id="visualisation" height="2040"></svg></div>
+	<div class="grid_2">
+	  <div style="font-size:9px">Use the checkboxes below to select additional keywords.  These keywords show other topics covered by the authors.</div>
+	  <div><b>Selected Keywords:</b><br/ >
+	    <div id="keywordlist"></div>
+	  </div>
+	  <div id="cblist" class="scrollcheckbox" height="200"></div>
+	  <div>
+	    <div><b>Followup List:</b><br/>
+	      <div id="followuplist" height="200"></div>
+	    </div>
+	</div>
+</div>
+
+</body>
+	<script src="js/jquery-ui-1.8.5.custom.min.js" type="text/javascript"></script>
+
+    <script type="text/javascript" src="d3/d3.js"></script>
+    <script type="text/javascript" src="d3/d3.time.js"></script> 
+	<script src="swimlane_page_reworked.js"></script>
+
+<div id="dialog-form" title="Add author to Followup List">
+	<p class="validateTips">Please describe why you selected this author.</p>
+
+	<form>
+	<fieldset>
+		<label for="notes">Notes</label>
+		<textarea cols="40" rows="5" name="notes" id="notes" value="" defaultValue="" />
+	</fieldset>
+	</form>
+</div>
+
+
+</html>
